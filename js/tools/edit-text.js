@@ -69,9 +69,9 @@ export const editText = {
       : cat === "serif" ? 'Georgia, "Times New Roman", serif'
       : "Helvetica, Arial, sans-serif";
     const loaded = (span.dataset.ploaded || "").trim();
-    const fontWeight = (span.dataset.pbold === "1" || parseInt(cs.fontWeight, 10) >= 600 || /bold|black|heavy|semibold|demi/.test(pname)) ? "bold" : "normal";
-    const fontStyle = (span.dataset.pitalic === "1" || /italic|oblique/.test(cs.fontStyle) || /italic|oblique/.test(pname)) ? "italic" : "normal";
     const fontSize = Math.max(6, parseFloat(cs.fontSize) || h * 0.9);
+    const wantBold = (span.dataset.pbold === "1" || parseInt(cs.fontWeight, 10) >= 600 || /bold|black|heavy|semibold|demi/.test(pname));
+    const wantItalic = (span.dataset.pitalic === "1" || /italic|oblique/.test(cs.fontStyle) || /italic|oblique/.test(pname));
 
     // Use the GENUINE embedded font when it's actually available. Canvas text does
     // not auto-repaint when a font loads later, so we load it first, then verify with
@@ -79,12 +79,18 @@ export const editText = {
     // is honoured by a raw canvas but NOT reliably by Fabric's measuring/render path,
     // which snaps back to the generic. Only when the embedded font is truly absent do
     // we fall back to a matching serif/sans/mono stack — never Fabric's Times default.
-    let fontFamily = generic;
+    let fontFamily = generic, usedEmbedded = false;
     if (loaded && document.fonts && document.fonts.load) {
       const probe = `${Math.max(8, Math.round(fontSize))}px "${loaded}"`;
       try { await document.fonts.load(probe); } catch {}
-      try { if (document.fonts.check(probe)) fontFamily = `"${loaded}"`; } catch {}
+      try { if (document.fonts.check(probe)) { fontFamily = `"${loaded}"`; usedEmbedded = true; } } catch {}
     }
+    // The embedded font already has its weight & slant baked into the glyphs, so we must
+    // NOT also synthesize bold/italic — that double-styles it (a "Semi Bold" face drawn
+    // faux-bold looks far too heavy, which reads as "the text went bold"). Synthesize
+    // only when we fell back to a generic family.
+    const fontWeight = (!usedEmbedded && wantBold) ? "bold" : "normal";
+    const fontStyle = (!usedEmbedded && wantItalic) ? "italic" : "normal";
 
     const cover = new fabric.Rect({ left: tl.x - 3, top: tl.y - 2, width: w + 8, height: h + 4, fill: bg, stroke: "" });
     cover.toolId = "edit-text";

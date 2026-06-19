@@ -68,6 +68,9 @@ const isTextObj = (o) => o.type === "i-text" || o.type === "textbox" || o.type =
 // Effective style at the editing IText's current caret/selection — merges per-character
 // overrides with the object defaults, so the toolbar can mirror the word under the caret.
 function effStyle(o) {
+  // Not editing -> no live caret; report the object's own style (avoid a STALE
+  // selection range from a previous edit, which would show the wrong word's size).
+  if (!o.isEditing) return { fontSize: o.fontSize, fontFamily: o.fontFamily, fill: o.fill, fontWeight: o.fontWeight, fontStyle: o.fontStyle };
   const len = (o.text || "").length;
   let s = o.selectionStart || 0;
   let e = o.selectionEnd != null ? o.selectionEnd : s;
@@ -98,14 +101,22 @@ function renderSelection(bar, pageId, ctx) {
   // otherwise to the whole object(s). Lets you resize/recolor a single word.
   const applyText = (style, label) => {
     const r = (objs.length === 1 && grabbedRange && grabbedRange.obj === o0 && grabbedRange.end > grabbedRange.start) ? grabbedRange : null;
+    const c = ctx.getCanvas(pageId);
     if (r && typeof o0.setSelectionStyles === "function") {
       o0.setSelectionStyles(style, r.start, r.end);
-      o0.selectionStart = r.start; o0.selectionEnd = r.end;   // keep the highlight if still editing
       o0.set("dirty", true); if (o0.initDimensions) o0.initDimensions();
+      // Stay in editing mode with the same word highlighted, so the user can keep
+      // hopping between words and the toolbar keeps tracking each one's style.
+      if (c) {
+        c.setActiveObject(o0);
+        if (!o0.isEditing && o0.enterEditing) o0.enterEditing();
+        if (o0.setSelectionStart) { o0.setSelectionStart(r.start); o0.setSelectionEnd(r.end); }
+        else { o0.selectionStart = r.start; o0.selectionEnd = r.end; }
+      }
     } else {
       objs.forEach((o) => { o.set(style); o.set("dirty", true); if (o.initDimensions) o.initDimensions(); });
     }
-    const c = ctx.getCanvas(pageId); if (c) c.requestRenderAll();
+    if (c) c.requestRenderAll();
     ctx.commitFor(pageId, label);
   };
 
@@ -147,8 +158,12 @@ function renderSelection(bar, pageId, ctx) {
         if (bBtn.setOn) bBtn.setOn(st.fontWeight === "bold");
         if (iBtn.setOn) iBtn.setOn(st.fontStyle === "italic");
       };
+      const syncSoon = () => { try { requestAnimationFrame(sync); } catch { sync(); } };
+      const cv = ctx.getCanvas(pageId);
       o0.on("selection:changed", sync);
-      textSyncOff = () => { try { o0.off("selection:changed", sync); } catch {} };
+      o0.on("editing:entered", sync);
+      if (cv) cv.on("mouse:up", syncSoon);   // a click that moves the caret to another word
+      textSyncOff = () => { try { o0.off("selection:changed", sync); o0.off("editing:entered", sync); if (cv) cv.off("mouse:up", syncSoon); } catch {} };
     }
   } else {
     if (hasStroke(o0)) bar.appendChild(color("Color", o0.stroke, (v) => apply((o) => { if (hasStroke(o)) o.set("stroke", v); }, "Color")));
