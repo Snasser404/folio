@@ -2,8 +2,22 @@
 import { bus, state } from "../core/state.js";
 import { getTool } from "../tools/registry.js";
 
+// Range of characters highlighted inside an editing IText, snapshotted the moment a
+// toolbar control is pressed — before it steals focus and collapses the selection.
+let grabbedRange = null;
+
 export function initContextbar(ctx) {
   const bar = document.getElementById("contextbar");
+
+  // Capture phase: fires before the control receives focus / the canvas text editor blurs.
+  bar.addEventListener("pointerdown", () => {
+    const sel = state.selection;
+    const objs = sel && sel.pageId ? ctx.getSelected(sel.pageId) : [];
+    const o = objs && objs.length === 1 ? objs[0] : null;
+    grabbedRange = (o && isTextObj(o) && o.selectionStart != null && o.selectionEnd != null && o.selectionEnd > o.selectionStart)
+      ? { obj: o, start: o.selectionStart, end: o.selectionEnd }
+      : null;
+  }, true);
 
   function render(toolId) {
     const tool = getTool(toolId);
@@ -59,6 +73,21 @@ function renderSelection(bar, pageId, ctx) {
 
   const apply = (fn, label) => { objs.forEach(fn); const c = ctx.getCanvas(pageId); if (c) c.requestRenderAll(); ctx.commitFor(pageId, label); };
 
+  // Apply a text style to ONLY the highlighted character range when one exists,
+  // otherwise to the whole object(s). Lets you resize/recolor a single word.
+  const applyText = (style, label) => {
+    const r = (objs.length === 1 && grabbedRange && grabbedRange.obj === o0 && grabbedRange.end > grabbedRange.start) ? grabbedRange : null;
+    if (r && typeof o0.setSelectionStyles === "function") {
+      o0.setSelectionStyles(style, r.start, r.end);
+      o0.selectionStart = r.start; o0.selectionEnd = r.end;   // keep the highlight if still editing
+      o0.set("dirty", true); if (o0.initDimensions) o0.initDimensions();
+    } else {
+      objs.forEach((o) => { o.set(style); o.set("dirty", true); if (o.initDimensions) o.initDimensions(); });
+    }
+    const c = ctx.getCanvas(pageId); if (c) c.requestRenderAll();
+    ctx.commitFor(pageId, label);
+  };
+
   if (objs.every(isTextObj)) {
     // For edit-text objects, show what the ORIGINAL text was (font / type / size)
     // and a one-click way to restore it — so a mismatched replacement is recoverable.
@@ -74,11 +103,11 @@ function renderSelection(bar, pageId, ctx) {
     if (det && det.family && !fontChoices.some((c) => c.value === det.family)) {
       fontChoices.unshift({ value: det.family, label: "Original — " + (prettyFontName(det.psName) || catLabel(det.category)) });
     }
-    bar.appendChild(sel("Font", fontChoices, o0.fontFamily || "Helvetica", (v) => apply((o) => o.set("fontFamily", v), "Font")));
-    bar.appendChild(num("Size", Math.round((o0.fontSize || 16) / ctx.OVERLAY_SCALE), 6, 400, (v) => apply((o) => o.set("fontSize", v * ctx.OVERLAY_SCALE), "Size")));
-    bar.appendChild(color("Color", o0.fill, (v) => apply((o) => o.set("fill", v), "Color")));
-    bar.appendChild(toggle("B", o0.fontWeight === "bold", (on) => apply((o) => o.set("fontWeight", on ? "bold" : "normal"), "Bold")));
-    bar.appendChild(toggle("I", o0.fontStyle === "italic", (on) => apply((o) => o.set("fontStyle", on ? "italic" : "normal"), "Italic")));
+    bar.appendChild(sel("Font", fontChoices, o0.fontFamily || "Helvetica", (v) => applyText({ fontFamily: v }, "Font")));
+    bar.appendChild(num("Size", Math.round((o0.fontSize || 16) / ctx.OVERLAY_SCALE), 6, 400, (v) => applyText({ fontSize: v * ctx.OVERLAY_SCALE }, "Size")));
+    bar.appendChild(color("Color", o0.fill, (v) => applyText({ fill: v }, "Color")));
+    bar.appendChild(toggle("B", o0.fontWeight === "bold", (on) => applyText({ fontWeight: on ? "bold" : "normal" }, "Bold")));
+    bar.appendChild(toggle("I", o0.fontStyle === "italic", (on) => applyText({ fontStyle: on ? "italic" : "normal" }, "Italic")));
   } else {
     if (hasStroke(o0)) bar.appendChild(color("Color", o0.stroke, (v) => apply((o) => { if (hasStroke(o)) o.set("stroke", v); }, "Color")));
     bar.appendChild(num("Weight", Math.round(o0.strokeWidth || 1), 1, 80, (v) => apply((o) => o.set("strokeWidth", v), "Weight")));
@@ -98,7 +127,7 @@ function sel(label, choices, val, on) { const w = wrap(); w.append(lbl(label)); 
 function num(label, val, min, max, on) { const w = wrap(); w.append(lbl(label)); const b = document.createElement("span"); b.className = "numlabel"; const i = document.createElement("input"); i.type = "number"; i.min = min; i.max = max; i.value = val; i.addEventListener("change", () => on(parseFloat(i.value) || min)); b.append(i); w.append(b); return w; }
 function color(label, val, on) { const w = wrap(); w.append(lbl(label)); const f = document.createElement("span"); f.className = "color-field"; const sw = document.createElement("i"); const i = document.createElement("input"); i.type = "color"; const hex = normColor(val); i.value = hex; sw.style.background = hex; i.addEventListener("input", () => { sw.style.background = i.value; on(i.value); }); f.append(sw, i); w.append(f); return w; }
 function slider(label, val, on) { const w = wrap(); w.append(lbl(label)); const r = document.createElement("input"); r.type = "range"; r.min = 0.1; r.max = 1; r.step = 0.05; r.value = val; const out = document.createElement("span"); out.className = "tnum"; out.textContent = Math.round(val * 100) + "%"; r.addEventListener("input", () => { out.textContent = Math.round(r.value * 100) + "%"; on(parseFloat(r.value)); }); w.append(r, out); return w; }
-function toggle(label, on0, on) { const b = document.createElement("button"); b.className = "btn ghost"; b.style.cssText = "height:28px;min-width:30px;font-weight:700"; b.textContent = label; let st = on0; const paint = () => { b.style.background = st ? "var(--accent-soft)" : ""; b.style.color = st ? "var(--accent)" : ""; }; paint(); b.addEventListener("click", (e) => { e.preventDefault(); st = !st; paint(); on(st); }); return b; }
+function toggle(label, on0, on) { const b = document.createElement("button"); b.className = "btn ghost"; b.style.cssText = "height:28px;min-width:30px;font-weight:700"; b.textContent = label; let st = on0; const paint = () => { b.style.background = st ? "var(--accent-soft)" : ""; b.style.color = st ? "var(--accent)" : ""; }; paint(); b.addEventListener("mousedown", (e) => e.preventDefault()); b.addEventListener("click", (e) => { e.preventDefault(); st = !st; paint(); on(st); }); return b; }
 function mkbtn(label, onClick, cls = "ghost", title) { const b = document.createElement("button"); b.className = "btn " + cls; b.style.cssText = "height:28px;padding:0 10px"; b.textContent = label; if (title) b.title = title; b.addEventListener("click", onClick); return b; }
 
 /* "Detected original" readout for edit-text objects: font name · type · size */
