@@ -1,0 +1,111 @@
+/* ============================================================================
+ * Motion & micro-interactions — premium, restrained, GPU-friendly (transform/opacity).
+ * Everything here is disabled under prefers-reduced-motion (bottom of file).
+ * ==========================================================================*/
+:root { --ease-spring: cubic-bezier(.34, 1.56, .64, 1); }
+
+/* ---- icons lift/scale on interactive controls (springy) ---- */
+.tool svg, .btn svg, .icon-btn svg, .tab svg, .feat svg, .thumb .tacts button svg {
+  transition: transform 180ms var(--ease-spring);
+}
+
+/* ---- tool buttons ---- */
+.tool {
+  transition: background var(--t-fast), color var(--t-fast), box-shadow var(--t-fast), transform var(--t-fast);
+}
+.tool:hover { transform: translateY(-1px); }
+.tool:hover svg { transform: scale(1.15); }
+.tool:active { transform: translateY(0) scale(.92); }
+.tool.active { animation: toolPop .3s var(--ease-spring); }
+@keyframes toolPop { 0% { transform: scale(.82); } 60% { transform: scale(1.12); } 100% { transform: scale(1); } }
+
+/* ---- generic + icon buttons ---- */
+.btn { transition: background var(--t-fast), border-color var(--t-fast), transform var(--t-fast), box-shadow var(--t-fast); }
+.btn:hover { transform: translateY(-1px); }
+.btn:active { transform: translateY(0) scale(.98); }
+.btn.primary:hover { box-shadow: var(--shadow-lg); }
+.icon-btn { transition: background var(--t-fast), color var(--t-fast), transform var(--t-fast); }
+.icon-btn:hover { transform: translateY(-1px); }
+.icon-btn:hover svg { transform: scale(1.12); }
+#themeToggle:hover svg { transform: rotate(25deg) scale(1.1); }
+#helpBtn:hover svg { transform: scale(1.18); }
+.wordmark svg { transition: transform 220ms var(--ease-spring); }
+.wordmark:hover svg { transform: rotate(-6deg) scale(1.06); }
+
+/* ---- flyouts / dropdown menus ---- */
+.flyout { animation: popIn .15s var(--ease-out); transform-origin: top left; }
+@keyframes popIn { from { opacity: 0; transform: translateY(-6px) scale(.97); } to { opacity: 1; transform: none; } }
+.flyout-item { transition: background var(--t-fast), padding-left var(--t-fast), color var(--t-fast); }
+.flyout-item:hover { padding-left: 14px; }
+
+/* ---- modals ---- */
+.modal-scrim { animation: fadeIn .16s ease-out; }
+.modal { animation: modalIn .24s var(--ease-spring); }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes modalIn { from { opacity: 0; transform: translateY(14px) scale(.96); } to { opacity: 1; transform: none; } }
+.gate-card { animation: modalIn .28s var(--ease-spring); }
+
+/* ---- tooltips: fade + rise ---- */
+.tooltip-pop { transition: opacity var(--t-fast), transform var(--t-fast); transform: translateY(5px); }
+.tooltip-pop.show { transform: translateY(0); }
+
+/* ---- tabs ---- */
+.tab { transition: color var(--t-fast), background var(--t-fast), border-color var(--t-base); }
+.tab:hover svg { transform: translateY(-1px) scale(1.08); }
+
+/* ---- thumbnails / list rows ---- */
+.thumb { transition: border-color var(--t-fast), transform 200ms var(--ease-spring), box-shadow var(--t-base); }
+.thumb:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+.thumb .tacts button { transition: transform var(--t-fast), background var(--t-fast); }
+.thumb .tacts button:hover { transform: scale(1.15); }
+.list-item { transition: background var(--t-fast), transform var(--t-fast); }
+.list-item:hover { transform: translateX(3px); }
+.recent-item { transition: background var(--t-fast), transform var(--t-fast), border-color var(--t-fast); }
+.recent-item:hover { transform: translateX(4px); border-color: var(--accent-ring); }
+
+/* ---- toolbar group separators subtle ---- */
+.tool.active { will-change: transform; }
+
+/* ============================================================================
+ * Hero / start screen — entrance stagger + ambient life
+ * ==========================================================================*/
+.hero > * { animation: heroIn .6s var(--ease-out) both; }
+.hero-title { animation-delay: .07s; }
+.hero-tag { animation-delay: .13s; }
+.hero-sub { animation-delay: .19s; }
+.hero .btn.big { animation-delay: .27s; }
+.hero-hint { animation-delay: .33s; }
+.hero-feats { animation-delay: .39s; }
+.hero .recent-box { animation-delay: .46s; }
+@keyframes heroIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+
+/* logo: entrance, then a gentle continuous float */
+.hero-logo { animation: heroIn .6s var(--ease-out) both, float 5s ease-in-out 1.2s infinite; }
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+
+/* primary CTA: lift + a one-pass "shine" sweep on hover */
+.hero .btn.big { position: relative; overflow: hidden; }
+.hero .btn.big::after {
+  content: ""; position: absolute; top: 0; left: -160%; width: 55%; height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .35), transparent);
+  transform: skewX(-20deg); pointer-events: none;
+}
+.hero .btn.big:hover::after { animation: shine .75s ease-out; }
+@keyframes shine { to { left: 160%; } }
+
+/* feature pills */
+.feat { transition: transform 200ms var(--ease-spring), border-color var(--t-fast), color var(--t-fast), box-shadow var(--t-fast); }
+.feat:hover { transform: translateY(-3px); border-color: var(--accent); color: var(--text); box-shadow: var(--shadow-sm); }
+.feat:hover svg { transform: scale(1.18); }
+
+/* page cards settle in as they mount */
+.page-host { transition: box-shadow var(--t-base); }
+
+/* ============================================================================
+ * Accessibility — honor reduced-motion
+ * ==========================================================================*/
+@media (prefers-reduced-motion: reduce) {
+  .hero > *, .hero-logo, .flyout, .modal, .modal-scrim, .gate-card, .tool.active { animation: none !important; }
+  .hero .btn.big:hover::after { animation: none !important; }
+  *, *::before, *::after { transition-duration: .001ms !important; }
+}

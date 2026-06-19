@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Folio — Private In-Browser PDF Editor</title>
+  <meta name="description" content="Folio — edit any PDF right in your browser: add & edit text, annotate, sign, fill forms, redact, OCR, merge and more. 100% private: your files never leave your device." />
+  <meta name="theme-color" content="#4f46e5" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Folio — Private In-Browser PDF Editor" />
+  <meta property="og:description" content="A full-featured PDF editor that runs entirely in your browser. Your files never leave your device." />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="stylesheet" href="css/tokens.css" />
+  <link rel="stylesheet" href="css/layout.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/motion.css" />
+
+  <script src="js/config.js"></script>
+  <script src="vendor/pdf.min.js"></script>
+  <script src="vendor/fabric.min.js"></script>
+  <script src="vendor/pdf-lib.min.js"></script>
+</head>
+<body>
+  <!-- ===== Icon sprite (stroke-based, 24x24) ===== -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <linearGradient id="logoGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#6366f1" /><stop offset="1" stop-color="#4338ca" />
+      </linearGradient>
+    </defs>
+    <symbol id="ic-logo" viewBox="0 0 32 32">
+      <rect width="32" height="32" rx="8" fill="url(#logoGrad)" />
+      <path d="M11.5 9.5h9M11.5 9.5v13M11.5 16h6" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
+    </symbol>
+    <symbol id="ic-select" viewBox="0 0 24 24"><path d="M5 3l6 16 2-7 7-2z" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/></symbol>
+    <symbol id="ic-hand" viewBox="0 0 24 24"><path d="M9 11V5.5a1.5 1.5 0 013 0V11m0-1.5a1.5 1.5 0 013 0V12m0-1a1.5 1.5 0 013 0v4a6 6 0 01-6 6h-2a6 6 0 01-5-3l-2.5-4a1.6 1.6 0 012.7-1.7L9 13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="ic-text" viewBox="0 0 24 24"><path d="M5 5h14M5 5v2m14-2v2M12 5v14m-2 0h4" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></symbol>
+    <symbol id="ic-highlight" viewBox="0 0 24 24"><path d="M4 20h6M14 4l6 6-9 9-6 1 1-6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="ic-markup" viewBox="0 0 24 24"><path d="M4 18h16M6 14l4-9 4 9M7.5 11h5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="ic-draw" viewBox="0 0 24 24"><path d="M3 21l3-1 11-11-2-2L4 18zM14 5l2-2a1.4 1.4 0 012 2l-2 2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="ic-shapes" viewBox="0 0 24 24"><rect x="3" y="11" width="9" height="9" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="16.5" cy="7.5" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+    <symbol id="ic-rect" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="1" fill="none" stroke="currentColor" stroke-width="1.75"/></symbol>
+    <symbol id="ic-ellipse" viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="9" ry="6.5" fill="none" stroke="currentColor" stroke-width="1.75"/></symbol>
+    <symbol id="ic-line" viewBox="0 0 24 24"><path d="M4 20L20 4" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></symbol>
+    <symbol id="ic-arrow" viewBox="0 0 24 24"><path d="M4 20L20 4M20 4h-7M20 4v7" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="ic-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="8.5" cy="9.5" r="1.6" fill="currentColor"/><path d="M21 16l-5-5L5 21" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+    <symbol id="ic-sign" viewBox="0 0 24 24"><path d="M3 19c3 0 3-10 6-10s2 7 4 7 2-4 4-4 2 2 4 2M3 21h18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="ic-stamp" viewBox="0 0 24 24"><path d="M9 11V7a3 3 0 016 0v4l1.5 2.5h-9zM4 21h16M5 21v-3h14v3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="ic-comment" viewBox="0 0 24 24"><path d="M21 12a8 8 0 01-11.5 7.2L4 21l1.8-5.5A8 8 0 1121 12z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+    <symbol id="ic-redact" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="8" rx="1" fill="currentColor"/><path d="M3 4h6M15 20h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="ic-whiteout" viewBox="0 0 24 24"><rect x="4" y="9" width="16" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M4 20h16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="ic-pages" viewBox="0 0 24 24"><rect x="4" y="3" width="11" height="14" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M9 21h9a1.5 1.5 0 001.5-1.5V8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="ic-open" viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+    <symbol id="ic-save" viewBox="0 0 24 24"><path d="M5 3h11l3 3v15H5zM8 3v6h7V3M8 21v-6h8v6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+    <symbol id="ic-undo" viewBox="0 0 24 24"><path d="M9 7L4 12l5 5M4 12h11a5 5 0 010 10h-1" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="ic-redo" viewBox="0 0 24 24"><path d="M15 7l5 5-5 5M20 12H9a5 5 0 000 10h1" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="ic-zoom-in" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M16 16l4 4M11 8v6M8 11h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="ic-zoom-out" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M16 16l4 4M8 11h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="ic-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M16 16l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="ic-outline" viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></symbol>
+    <symbol id="ic-rotate" viewBox="0 0 24 24"><path d="M21 12a9 9 0 11-2.6-6.4M21 4v5h-5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="ic-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m1 0v13a1 1 0 01-1 1H8a1 1 0 01-1-1V7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="ic-chevron" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="ic-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="ic-moon" viewBox="0 0 24 24"><path d="M21 12.8A8 8 0 1111.2 3a6.2 6.2 0 009.8 9.8z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+    <symbol id="ic-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M9.5 9a2.5 2.5 0 113.5 2.3c-.8.4-1 .9-1 1.7M12 16.5h.01" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="ic-fit-width" viewBox="0 0 24 24"><path d="M3 8v8M21 8v8M7 12h10M7 12l3-3M7 12l3 3M17 12l-3-3M17 12l-3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="ic-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></symbol>
+    <symbol id="ic-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></symbol>
+    <symbol id="ic-duplicate" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M4 16V6a2 2 0 012-2h10" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+    <symbol id="ic-merge" viewBox="0 0 24 24"><path d="M7 3v6a4 4 0 004 4h2a4 4 0 014 4v4M17 3v6a4 4 0 01-4 4M12 17l-3 3m3-3l3 3" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="ic-panel-left" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M9 4v16" stroke="currentColor" stroke-width="1.6"/></symbol>
+    <symbol id="ic-panel-right" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M15 4v16" stroke="currentColor" stroke-width="1.6"/></symbol>
+    <symbol id="ic-link" viewBox="0 0 24 24"><path d="M9 15l6-6M10 6l1-1a4 4 0 015.7 5.7l-2 2M14 18l-1 1a4 4 0 01-5.7-5.7l2-2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="ic-crop" viewBox="0 0 24 24"><path d="M6 2v14a2 2 0 002 2h14M2 6h14a2 2 0 012 2v14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="ic-export" viewBox="0 0 24 24"><path d="M12 3v12m0-12l-4 4m4-4l4 4M5 15v4a2 2 0 002 2h10a2 2 0 002-2v-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="ic-import" viewBox="0 0 24 24"><path d="M12 15V3m0 12l-4-4m4 4l4-4M5 15v4a2 2 0 002 2h10a2 2 0 002-2v-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="ic-edit-text" viewBox="0 0 24 24"><path d="M4 7h11M4 12h7M4 17h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M19.5 9.5l-7 7V19h2.5l7-7zM18 11l2.5 2.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></symbol>
+    <symbol id="ic-measure" viewBox="0 0 24 24"><path d="M3 14L14 3l7 7L10 21z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M7 10l2 2M10 7l2 2M13 4l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+  </svg>
+
+  <div id="app">
+    <!-- ===== Menu bar ===== -->
+    <header id="menubar">
+      <div class="wordmark"><svg width="22" height="22" viewBox="0 0 32 32"><use href="#ic-logo"/></svg><span>Folio</span></div>
+      <button class="menu-item" data-menu="file">File</button>
+      <button class="menu-item" data-menu="edit">Edit</button>
+      <button class="menu-item" data-menu="view">View</button>
+      <button class="menu-item" data-menu="document">Document</button>
+      <button class="menu-item" data-menu="help">Help</button>
+      <div class="menu-spacer"></div>
+      <span class="doc-name" id="docName"></span>
+      <button class="icon-btn" id="toggleLeft" aria-label="Toggle pages panel" data-tip="Toggle pages panel"><svg viewBox="0 0 24 24"><use href="#ic-panel-left"/></svg></button>
+      <button class="icon-btn" id="toggleRight" aria-label="Toggle properties panel" data-tip="Toggle properties panel"><svg viewBox="0 0 24 24"><use href="#ic-panel-right"/></svg></button>
+      <button class="icon-btn" id="themeToggle" aria-label="Toggle light/dark theme" data-tip="Toggle theme"><svg viewBox="0 0 24 24"><use href="#ic-moon"/></svg></button>
+      <button class="icon-btn" id="helpBtn" aria-label="Keyboard shortcuts" data-tip="Shortcuts (?)"><svg viewBox="0 0 24 24"><use href="#ic-help"/></svg></button>
+    </header>
+
+    <!-- ===== Main toolbar (populated by ui/toolbar.js) ===== -->
+    <div id="toolbar" role="toolbar" aria-label="Editing tools"></div>
+
+    <!-- ===== Contextual sub-toolbar (populated by ui/contextual-toolbar.js) ===== -->
+    <div id="contextbar" class="empty"></div>
+
+    <!-- ===== Left panel ===== -->
+    <aside id="left">
+      <div class="tabs" role="tablist" aria-label="Side panels">
+        <button class="tab active" role="tab" aria-label="Pages" aria-selected="true" data-tab="thumbnails" data-tip="Pages"><svg viewBox="0 0 24 24"><use href="#ic-pages"/></svg></button>
+        <button class="tab" role="tab" aria-label="Outline" aria-selected="false" data-tab="outline" data-tip="Outline"><svg viewBox="0 0 24 24"><use href="#ic-outline"/></svg></button>
+        <button class="tab" role="tab" aria-label="Search" aria-selected="false" data-tab="search" data-tip="Search"><svg viewBox="0 0 24 24"><use href="#ic-search"/></svg></button>
+        <button class="tab" role="tab" aria-label="Comments" aria-selected="false" data-tab="comments" data-tip="Comments"><svg viewBox="0 0 24 24"><use href="#ic-comment"/></svg></button>
+      </div>
+      <div class="tab-panel active" data-panel="thumbnails" id="panel-thumbnails"></div>
+      <div class="tab-panel" data-panel="outline" id="panel-outline"></div>
+      <div class="tab-panel" data-panel="search" id="panel-search"></div>
+      <div class="tab-panel" data-panel="comments" id="panel-comments"></div>
+    </aside>
+
+    <!-- ===== Center document ===== -->
+    <main id="center">
+      <div id="viewport"><div id="pageList"></div></div>
+      <div id="pageIndicator"></div>
+      <div id="emptyState">
+        <div class="hero">
+          <div class="hero-logo"><svg width="66" height="66" viewBox="0 0 32 32"><use href="#ic-logo"/></svg></div>
+          <h1 class="hero-title">Folio</h1>
+          <p class="hero-tag">Edit any PDF, right in your browser.</p>
+          <p class="hero-sub">Add &amp; edit text, annotate, sign, fill forms, redact, OCR and merge — all in one place. Nothing is uploaded; your files never leave your device.</p>
+          <button class="btn primary big" id="openBtn2"><svg viewBox="0 0 24 24"><use href="#ic-open"/></svg> Open a PDF</button>
+          <p class="hero-hint">or drag &amp; drop a file anywhere&nbsp;&nbsp;·&nbsp;&nbsp;<span class="lock">🔒 100% private</span></p>
+          <div class="hero-feats">
+            <span class="feat"><svg viewBox="0 0 24 24"><use href="#ic-edit-text"/></svg>Edit text</span>
+            <span class="feat"><svg viewBox="0 0 24 24"><use href="#ic-sign"/></svg>Sign</span>
+            <span class="feat"><svg viewBox="0 0 24 24"><use href="#ic-markup"/></svg>Annotate</span>
+            <span class="feat"><svg viewBox="0 0 24 24"><use href="#ic-redact"/></svg>Redact</span>
+            <span class="feat"><svg viewBox="0 0 24 24"><use href="#ic-search"/></svg>OCR &amp; search</span>
+            <span class="feat"><svg viewBox="0 0 24 24"><use href="#ic-merge"/></svg>Merge</span>
+          </div>
+          <div id="recentBox" class="recent-box" hidden></div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ===== Right inspector ===== -->
+    <aside id="right"><div class="panel-body" id="inspector"></div></aside>
+
+    <!-- ===== Status bar ===== -->
+    <footer id="statusbar">
+      <span class="saved-dot" id="savedDot" title="Saved"></span>
+      <span id="sbDocName" class="muted">No document</span>
+      <div class="sb-spacer"></div>
+      <span>Page <input class="field tnum" id="sbPageInput" style="width:42px;height:20px;padding:0 4px;text-align:center" value="–"> of <span id="sbPageCount">–</span></span>
+      <div class="sb-spacer"></div>
+      <span id="sbDims" class="tnum"></span>
+      <div class="sb-zoom">
+        <button id="sbZoomOut" class="sb-zbtn" aria-label="Zoom out" data-tip="Zoom out">−</button>
+        <input type="range" id="sbZoomSlider" min="25" max="400" step="1" value="100" aria-label="Zoom level" title="Zoom" />
+        <button id="sbZoomIn" class="sb-zbtn" aria-label="Zoom in" data-tip="Zoom in">+</button>
+        <span id="sbZoom" class="tnum" style="min-width:42px;text-align:right">100%</span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ===== Overlays ===== -->
+  <div id="busy" hidden><div class="busy-box"><div class="spinner"></div><span id="busyText">Working…</span></div></div>
+  <div id="dropOverlay" hidden><div>Drop PDF to open</div></div>
+  <div id="toasts"></div>
+  <div id="modalRoot"></div>
+  <div id="flyoutRoot"></div>
+
+  <input type="file" id="fileInput" accept="application/pdf" hidden />
+  <input type="file" id="imageInput" accept="image/*" hidden />
+  <input type="file" id="mergeInput" accept="application/pdf" hidden />
+  <input type="file" id="annInput" accept="application/json,.json" hidden />
+  <input type="file" id="compareInput" accept="application/pdf" hidden />
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

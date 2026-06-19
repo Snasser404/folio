@@ -1,0 +1,15 @@
+# Local tooling / editor config (not part of the app)
+.claude/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Dependencies (Netlify installs these at build time)
+node_modules/
+netlify/functions/node_modules/
+
+# Logs / env
+*.log
+.env
+.env.*
+.netlify/
