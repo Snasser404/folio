@@ -95,6 +95,17 @@ export const editText = {
       cursorColor: fg, cursorWidth: 2, editingBorderColor: "#4f46e5",
     });
     t.toolId = "edit-text";
+    // Record what the ORIGINAL text actually was, so the contextual toolbar can show
+    // it (font, type, size) and offer one-click "Reset to original" — handy when the
+    // embedded font isn't reproducible and the replacement looks slightly off.
+    t.detected = {
+      family: fontFamily,                                    // what we applied
+      loaded,                                                // embedded FontFace name (if any)
+      psName: span.dataset.pname || "",                      // real PostScript/base font name
+      category: cat,                                         // "serif" | "sans" | "mono"
+      sizePt: Math.round((fontSize / ctx.OVERLAY_SCALE) * 10) / 10,
+      weight: fontWeight, style: fontStyle,
+    };
     ctx.addObject(pageId, t, { select: false });
 
     ctx.setActiveTool("select");        // also removes our click listener (deactivate)

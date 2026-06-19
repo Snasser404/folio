@@ -60,7 +60,21 @@ function renderSelection(bar, pageId, ctx) {
   const apply = (fn, label) => { objs.forEach(fn); const c = ctx.getCanvas(pageId); if (c) c.requestRenderAll(); ctx.commitFor(pageId, label); };
 
   if (objs.every(isTextObj)) {
-    bar.appendChild(sel("Font", FONTS.map((f) => ({ value: f, label: f })), o0.fontFamily || "Helvetica", (v) => apply((o) => o.set("fontFamily", v), "Font")));
+    // For edit-text objects, show what the ORIGINAL text was (font / type / size)
+    // and a one-click way to restore it — so a mismatched replacement is recoverable.
+    const det = (objs.length === 1 && o0.toolId === "edit-text" && o0.detected) ? o0.detected : null;
+    if (det) {
+      bar.appendChild(detectedChip(det));
+      bar.appendChild(mkbtn("Reset", () => apply((o) => {
+        const d = o.detected; if (!d) return;
+        o.set({ fontFamily: d.family, fontSize: d.sizePt * ctx.OVERLAY_SCALE, fontWeight: d.weight, fontStyle: d.style });
+      }, "Reset to original font"), "ghost", "Restore the original detected font, size, weight & style"));
+    }
+    const fontChoices = FONTS.map((f) => ({ value: f, label: f }));
+    if (det && det.family && !fontChoices.some((c) => c.value === det.family)) {
+      fontChoices.unshift({ value: det.family, label: "Original — " + (prettyFontName(det.psName) || catLabel(det.category)) });
+    }
+    bar.appendChild(sel("Font", fontChoices, o0.fontFamily || "Helvetica", (v) => apply((o) => o.set("fontFamily", v), "Font")));
     bar.appendChild(num("Size", Math.round((o0.fontSize || 16) / ctx.OVERLAY_SCALE), 6, 400, (v) => apply((o) => o.set("fontSize", v * ctx.OVERLAY_SCALE), "Size")));
     bar.appendChild(color("Color", o0.fill, (v) => apply((o) => o.set("fill", v), "Color")));
     bar.appendChild(toggle("B", o0.fontWeight === "bold", (on) => apply((o) => o.set("fontWeight", on ? "bold" : "normal"), "Bold")));
@@ -85,7 +99,31 @@ function num(label, val, min, max, on) { const w = wrap(); w.append(lbl(label));
 function color(label, val, on) { const w = wrap(); w.append(lbl(label)); const f = document.createElement("span"); f.className = "color-field"; const sw = document.createElement("i"); const i = document.createElement("input"); i.type = "color"; const hex = normColor(val); i.value = hex; sw.style.background = hex; i.addEventListener("input", () => { sw.style.background = i.value; on(i.value); }); f.append(sw, i); w.append(f); return w; }
 function slider(label, val, on) { const w = wrap(); w.append(lbl(label)); const r = document.createElement("input"); r.type = "range"; r.min = 0.1; r.max = 1; r.step = 0.05; r.value = val; const out = document.createElement("span"); out.className = "tnum"; out.textContent = Math.round(val * 100) + "%"; r.addEventListener("input", () => { out.textContent = Math.round(r.value * 100) + "%"; on(parseFloat(r.value)); }); w.append(r, out); return w; }
 function toggle(label, on0, on) { const b = document.createElement("button"); b.className = "btn ghost"; b.style.cssText = "height:28px;min-width:30px;font-weight:700"; b.textContent = label; let st = on0; const paint = () => { b.style.background = st ? "var(--accent-soft)" : ""; b.style.color = st ? "var(--accent)" : ""; }; paint(); b.addEventListener("click", (e) => { e.preventDefault(); st = !st; paint(); on(st); }); return b; }
-function mkbtn(label, onClick, cls = "ghost") { const b = document.createElement("button"); b.className = "btn " + cls; b.style.cssText = "height:28px;padding:0 10px"; b.textContent = label; b.addEventListener("click", onClick); return b; }
+function mkbtn(label, onClick, cls = "ghost", title) { const b = document.createElement("button"); b.className = "btn " + cls; b.style.cssText = "height:28px;padding:0 10px"; b.textContent = label; if (title) b.title = title; b.addEventListener("click", onClick); return b; }
+
+/* "Detected original" readout for edit-text objects: font name · type · size */
+function catLabel(cat) { return cat === "serif" ? "Serif" : cat === "mono" ? "Monospace" : "Sans-serif"; }
+function prettyFontName(ps) {
+  if (!ps) return "";
+  let n = String(ps).replace(/^[A-Z]{6}\+/, "");        // drop subset prefix "ABCDEF+"
+  n = n.replace(/[-_ ]?(PSMT|MT|PS)$/i, "");             // drop trailing PostScript markers
+  n = n.replace(/[-_]+/g, " ");                          // separators -> spaces
+  n = n.replace(/([a-z0-9])([A-Z])/g, "$1 $2");         // TimesNewRoman -> Times New Roman
+  return n.replace(/\s+/g, " ").trim();
+}
+function detectedChip(det) {
+  const s = document.createElement("span");
+  s.className = "ctx-detected";
+  const name = prettyFontName(det.psName);
+  const display = name || catLabel(det.category);
+  const meta = (name ? catLabel(det.category) + " · " : "") + det.sizePt + " pt";
+  const key = document.createElement("span"); key.className = "cd-key"; key.textContent = "Original";
+  const nm = document.createElement("b"); nm.className = "cd-name"; nm.textContent = display;
+  const mt = document.createElement("span"); mt.className = "cd-meta"; mt.textContent = meta;
+  s.append(key, nm, mt);
+  s.title = (det.psName ? "Detected font: " + det.psName + "\n" : "") + "Click Reset to restore this exactly.";
+  return s;
+}
 function prettyType(o) {
   if (o.toolId === "note") return "Sticky note"; if (o.toolId === "stamp") return "Stamp";
   if (o.toolId === "signature") return "Signature"; if (o.toolId === "text-markup") return "Markup";

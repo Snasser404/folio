@@ -57,6 +57,16 @@
   font-size: var(--fs-xs); color: var(--text-muted); flex: none;
 }
 .ctl > span.lbl { white-space: nowrap; }
+/* "Original" detected-font readout chip (edit-text selection) */
+.ctx-detected {
+  display: inline-flex; align-items: center; gap: 6px; flex: none; white-space: nowrap;
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-full);
+  padding: 3px 12px; font-size: var(--fs-xs); cursor: default;
+}
+.ctx-detected .cd-key { font-size: var(--fs-2xs); font-weight: var(--fw-bold); letter-spacing: .05em;
+  text-transform: uppercase; color: var(--accent); }
+.ctx-detected .cd-name { color: var(--text); font-weight: var(--fw-semibold); }
+.ctx-detected .cd-meta { color: var(--text-muted); }
 .color-field {
   position: relative; width: 28px; height: 28px; border-radius: var(--r-sm);
   border: 1px solid var(--border-strong); cursor: pointer; overflow: hidden; flex: none;

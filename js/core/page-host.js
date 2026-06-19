@@ -16,7 +16,7 @@ export const BASE = 2;
 /* ---- one-time Fabric configuration ---- */
 const _toObject = fabric.Object.prototype.toObject;
 fabric.Object.prototype.toObject = function (extra) {
-  return _toObject.call(this, ["id", "toolId", "meta"].concat(extra || []));
+  return _toObject.call(this, ["id", "toolId", "meta", "detected"].concat(extra || []));
 };
 Object.assign(fabric.Object.prototype, {
   transparentCorners: false, cornerStyle: "circle", cornerSize: 10,
