@@ -5,6 +5,8 @@ import { getTool } from "../tools/registry.js";
 // Range of characters highlighted inside an editing IText, snapshotted the moment a
 // toolbar control is pressed — before it steals focus and collapses the selection.
 let grabbedRange = null;
+// Detaches the live field-sync listener from the previously edited text object.
+let textSyncOff = null;
 
 export function initContextbar(ctx) {
   const bar = document.getElementById("contextbar");
@@ -44,6 +46,7 @@ export function initContextbar(ctx) {
   // When something is selected (in Select mode), show controls to edit it —
   // so text formatting stays available without re-picking the Text tool.
   function renderActive() {
+    if (textSyncOff) { try { textSyncOff(); } catch {} textSyncOff = null; }
     const sel = state.selection;
     const tool = getTool(state.view.activeTool);
     if (tool && tool.usesSelection && sel.objectIds && sel.objectIds.length && ctx.getSelected(sel.pageId).length) {
@@ -61,6 +64,24 @@ export function initContextbar(ctx) {
 const FONTS = ["Helvetica", "Arial", "Times New Roman", "Georgia", "Courier New", "Verdana"];
 const hasStroke = (o) => o.stroke && o.stroke !== "" && o.type !== "image";
 const isTextObj = (o) => o.type === "i-text" || o.type === "textbox" || o.type === "text";
+
+// Effective style at the editing IText's current caret/selection — merges per-character
+// overrides with the object defaults, so the toolbar can mirror the word under the caret.
+function effStyle(o) {
+  const len = (o.text || "").length;
+  let s = o.selectionStart || 0;
+  let e = o.selectionEnd != null ? o.selectionEnd : s;
+  if (e <= s) { s = Math.min(s, Math.max(0, len - 1)); e = s + 1; }   // caret -> inspect char at caret
+  let f = {};
+  try { const arr = o.getSelectionStyles ? o.getSelectionStyles(s, e, true) : []; f = (arr && arr[0]) || {}; } catch {}
+  return {
+    fontSize: f.fontSize != null ? f.fontSize : o.fontSize,
+    fontFamily: f.fontFamily != null ? f.fontFamily : o.fontFamily,
+    fill: f.fill != null ? f.fill : o.fill,
+    fontWeight: f.fontWeight != null ? f.fontWeight : o.fontWeight,
+    fontStyle: f.fontStyle != null ? f.fontStyle : o.fontStyle,
+  };
+}
 
 function renderSelection(bar, pageId, ctx) {
   const objs = ctx.getSelected(pageId);
@@ -103,11 +124,32 @@ function renderSelection(bar, pageId, ctx) {
     if (det && det.family && !fontChoices.some((c) => c.value === det.family)) {
       fontChoices.unshift({ value: det.family, label: "Original — " + (prettyFontName(det.psName) || catLabel(det.category)) });
     }
-    bar.appendChild(sel("Font", fontChoices, o0.fontFamily || "Helvetica", (v) => applyText({ fontFamily: v }, "Font")));
-    bar.appendChild(num("Size", Math.round((o0.fontSize || 16) / ctx.OVERLAY_SCALE), 6, 400, (v) => applyText({ fontSize: v * ctx.OVERLAY_SCALE }, "Size")));
-    bar.appendChild(color("Color", o0.fill, (v) => applyText({ fill: v }, "Color")));
-    bar.appendChild(toggle("B", o0.fontWeight === "bold", (on) => applyText({ fontWeight: on ? "bold" : "normal" }, "Bold")));
-    bar.appendChild(toggle("I", o0.fontStyle === "italic", (on) => applyText({ fontStyle: on ? "italic" : "normal" }, "Italic")));
+    const init = o0.isEditing ? effStyle(o0) : { fontSize: o0.fontSize, fontFamily: o0.fontFamily, fill: o0.fill, fontWeight: o0.fontWeight, fontStyle: o0.fontStyle };
+    const fontCtl = sel("Font", fontChoices, init.fontFamily || "Helvetica", (v) => applyText({ fontFamily: v }, "Font"));
+    const sizeCtl = num("Size", Math.round((init.fontSize || 16) / ctx.OVERLAY_SCALE), 6, 400, (v) => applyText({ fontSize: v * ctx.OVERLAY_SCALE }, "Size"));
+    const colorCtl = color("Color", init.fill, (v) => applyText({ fill: v }, "Color"));
+    const bBtn = toggle("B", init.fontWeight === "bold", (on) => applyText({ fontWeight: on ? "bold" : "normal" }, "Bold"));
+    const iBtn = toggle("I", init.fontStyle === "italic", (on) => applyText({ fontStyle: on ? "italic" : "normal" }, "Italic"));
+    bar.append(fontCtl, sizeCtl, colorCtl, bBtn, iBtn);
+
+    // Live-update the fields as the caret/selection moves between words while editing.
+    if (objs.length === 1 && typeof o0.on === "function") {
+      const sizeInput = sizeCtl.querySelector("input");
+      const fontSelEl = fontCtl.querySelector("select");
+      const colorInput = colorCtl.querySelector('input[type="color"]');
+      const colorSwatch = colorCtl.querySelector("i");
+      const sync = () => {
+        if ([sizeInput, fontSelEl, colorInput].indexOf(document.activeElement) !== -1) return;  // don't clobber active typing
+        const st = effStyle(o0);
+        if (sizeInput) sizeInput.value = Math.round((st.fontSize || 16) / ctx.OVERLAY_SCALE);
+        if (fontSelEl && st.fontFamily != null) fontSelEl.value = st.fontFamily;
+        if (colorInput && colorSwatch) { const hex = normColor(st.fill); colorInput.value = hex; colorSwatch.style.background = hex; }
+        if (bBtn.setOn) bBtn.setOn(st.fontWeight === "bold");
+        if (iBtn.setOn) iBtn.setOn(st.fontStyle === "italic");
+      };
+      o0.on("selection:changed", sync);
+      textSyncOff = () => { try { o0.off("selection:changed", sync); } catch {} };
+    }
   } else {
     if (hasStroke(o0)) bar.appendChild(color("Color", o0.stroke, (v) => apply((o) => { if (hasStroke(o)) o.set("stroke", v); }, "Color")));
     bar.appendChild(num("Weight", Math.round(o0.strokeWidth || 1), 1, 80, (v) => apply((o) => o.set("strokeWidth", v), "Weight")));
@@ -127,7 +169,7 @@ function sel(label, choices, val, on) { const w = wrap(); w.append(lbl(label)); 
 function num(label, val, min, max, on) { const w = wrap(); w.append(lbl(label)); const b = document.createElement("span"); b.className = "numlabel"; const i = document.createElement("input"); i.type = "number"; i.min = min; i.max = max; i.value = val; i.addEventListener("change", () => on(parseFloat(i.value) || min)); b.append(i); w.append(b); return w; }
 function color(label, val, on) { const w = wrap(); w.append(lbl(label)); const f = document.createElement("span"); f.className = "color-field"; const sw = document.createElement("i"); const i = document.createElement("input"); i.type = "color"; const hex = normColor(val); i.value = hex; sw.style.background = hex; i.addEventListener("input", () => { sw.style.background = i.value; on(i.value); }); f.append(sw, i); w.append(f); return w; }
 function slider(label, val, on) { const w = wrap(); w.append(lbl(label)); const r = document.createElement("input"); r.type = "range"; r.min = 0.1; r.max = 1; r.step = 0.05; r.value = val; const out = document.createElement("span"); out.className = "tnum"; out.textContent = Math.round(val * 100) + "%"; r.addEventListener("input", () => { out.textContent = Math.round(r.value * 100) + "%"; on(parseFloat(r.value)); }); w.append(r, out); return w; }
-function toggle(label, on0, on) { const b = document.createElement("button"); b.className = "btn ghost"; b.style.cssText = "height:28px;min-width:30px;font-weight:700"; b.textContent = label; let st = on0; const paint = () => { b.style.background = st ? "var(--accent-soft)" : ""; b.style.color = st ? "var(--accent)" : ""; }; paint(); b.addEventListener("mousedown", (e) => e.preventDefault()); b.addEventListener("click", (e) => { e.preventDefault(); st = !st; paint(); on(st); }); return b; }
+function toggle(label, on0, on) { const b = document.createElement("button"); b.className = "btn ghost"; b.style.cssText = "height:28px;min-width:30px;font-weight:700"; b.textContent = label; let st = on0; const paint = () => { b.style.background = st ? "var(--accent-soft)" : ""; b.style.color = st ? "var(--accent)" : ""; }; paint(); b.setOn = (v) => { st = !!v; paint(); }; b.addEventListener("mousedown", (e) => e.preventDefault()); b.addEventListener("click", (e) => { e.preventDefault(); st = !st; paint(); on(st); }); return b; }
 function mkbtn(label, onClick, cls = "ghost", title) { const b = document.createElement("button"); b.className = "btn " + cls; b.style.cssText = "height:28px;padding:0 10px"; b.textContent = label; if (title) b.title = title; b.addEventListener("click", onClick); return b; }
 
 /* "Detected original" readout for edit-text objects: font name · type · size */
