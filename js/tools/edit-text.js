@@ -1,19 +1,25 @@
-/* "Edit text" — practical substitute for true inline PDF text editing.
- * Click a line of existing text: the original is covered with a background-matched
- * box and replaced by an editable text box pre-filled with that text.
- * (This is an overlay edit, not glyph-level reflow — no client-side lib does that.) */
+/* "Replace text" — the realistic substitute for true inline PDF text editing.
+ * No browser-only library can rewrite a page's embedded-font text in place (only paid
+ * WASM engines like Apryse/Nutrient do). So, like every free PDF tool, we COVER the
+ * original line with a background-matched patch and drop an editable copy on top in the
+ * same font. It can't reflow the page, so replacements should stay ~the same length. */
 const fabric = window.fabric;
 
 export const editText = {
-  id: "edit-text", label: "Edit text", icon: "edit-text", group: "markup",
+  id: "edit-text", label: "Replace text", icon: "edit-text", group: "markup",
   shortcut: "e", cursor: "text", usesSelection: false, usesTextLayer: true, options: [],
-  hint: "Click a line of existing text to replace it",
+  hint: "Click a line of text to cover it and retype in the same font",
   activate(ctx) {
     this._ctx = ctx;
     this._busy = false;
     this._h = (e) => this._click(e);
     document.addEventListener("click", this._h, true);
-    if (!this._warned) { ctx.util.toast("Click a line of text to replace it.", "info", 3200); this._warned = true; }
+    let seen = false;
+    try { seen = !!localStorage.getItem("pe_replace_text_seen"); } catch {}
+    if (!seen) {
+      ctx.util.toast("Replace text covers the original line and drops in an editable copy in the same font. It can't reflow the page — keep replacements about the same length.", "info", 6500);
+      try { localStorage.setItem("pe_replace_text_seen", "1"); } catch {}
+    }
   },
   deactivate() {
     if (this._h) document.removeEventListener("click", this._h, true);
@@ -32,11 +38,25 @@ export const editText = {
     e.preventDefault(); e.stopPropagation();
     this._busy = true;
 
-    // merge all spans on the clicked visual line for a whole-line edit
+    // Merge the spans of the clicked visual line ONLY — same line, same size, same font.
+    // (Keying off the clicked span's top with a fat tolerance used to sweep a small
+    // eyebrow like "THE HAMMAM" into a big heading, producing a jumbled merged copy.)
     const clicked = span.getBoundingClientRect();
+    const cCenter = clicked.top + clicked.height / 2;
+    const cLoaded = (span.dataset.ploaded || "").trim();
     const sibs = [...span.parentElement.children].filter((s) => s.tagName === "SPAN");
     const line = sibs
-      .filter((s) => Math.abs(s.getBoundingClientRect().top - clicked.top) < clicked.height * 0.6)
+      .filter((s) => {
+        const r = s.getBoundingClientRect();
+        if (!r.height) return false;
+        const tol = Math.min(clicked.height, r.height) * 0.5;          // tolerance from the SHORTER run
+        if (Math.abs(r.top + r.height / 2 - cCenter) > tol) return false; // same visual line (centers)
+        const ratio = r.height / clicked.height;
+        if (ratio <= 0.7 || ratio >= 1.4) return false;               // same size run only
+        const sl = (s.dataset.ploaded || "").trim();
+        if (cLoaded && sl && sl !== cLoaded) return false;            // same font identity
+        return true;
+      })
       .sort((a, b) => a.getBoundingClientRect().left - b.getBoundingClientRect().left);
     let left = Infinity, top = Infinity, right = -Infinity, bottom = -Infinity, txt = "";
     line.forEach((s) => {
@@ -49,7 +69,14 @@ export const editText = {
     const tl = ctx.screenToOverlay(pageId, left, top);
     const br = ctx.screenToOverlay(pageId, right, bottom);
     const w = br.x - tl.x, h = br.y - tl.y;
-    const { bg, fg } = ctx.sampleRasterColors(pageId, { left: tl.x, top: tl.y, width: w, height: h });
+    // Pad the cover proportionally to the text height so it swallows glyph overhang —
+    // tall ascenders/accents, descenders on g/y/p, italic lean, letter-spacing — that
+    // a fixed few-px pad missed on big headings (leaving the original peeking out).
+    const padX = Math.max(4, h * 0.12), padTop = Math.max(3, h * 0.20), padBot = Math.max(3, h * 0.24);
+    const coverBox = { left: tl.x - padX, top: tl.y - padTop, width: w + padX * 2, height: h + padTop + padBot };
+    // Sample the background from the INFLATED box so paper outnumbers ink in the
+    // histogram (a tightly-set heading would otherwise sample its own dark ink as "bg").
+    const { bg, fg } = ctx.sampleRasterColors(pageId, coverBox);
 
     // Reproduce the EXACT original typeface. PDF.js registers the embedded font in
     // document.fonts under its `loadedName` (stashed on the span as data-ploaded);
@@ -92,7 +119,7 @@ export const editText = {
     const fontWeight = (!usedEmbedded && wantBold) ? "bold" : "normal";
     const fontStyle = (!usedEmbedded && wantItalic) ? "italic" : "normal";
 
-    const cover = new fabric.Rect({ left: tl.x - 3, top: tl.y - 2, width: w + 8, height: h + 4, fill: bg, stroke: "" });
+    const cover = new fabric.Rect({ ...coverBox, fill: bg, stroke: "" });
     cover.toolId = "edit-text";
     ctx.addObject(pageId, cover, { select: false });
 
