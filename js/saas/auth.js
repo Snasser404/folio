@@ -32,12 +32,12 @@ export async function getPlan() {
   return (data && data.plan) || "free";
 }
 
-export async function startCheckout(cfg) {
+export async function startCheckout(cfg, priceId) {
   const token = (await getSession())?.access_token;
   const r = await fetch(cfg.checkoutFn, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
-    body: JSON.stringify({ priceId: cfg.priceId }),
+    body: JSON.stringify({ priceId }),
   });
   const j = await r.json();
   if (j.url) location.href = j.url; else throw new Error(j.error || "Could not start checkout");

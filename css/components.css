@@ -309,4 +309,17 @@ select.field, input.field {
 .gate-fine { font-size: var(--fs-xs); color: var(--text-faint); margin-top: 14px; }
 .gate-fine a, .gate-sub a { color: var(--accent); }
 .gate-price { font-size: var(--fs-2xl); font-weight: var(--fw-bold); margin: 6px 0 16px; }
+/* plan chooser (monthly / annual) on the trial paywall */
+.gate-plan-toggle { display: flex; gap: 8px; margin: 4px 0 12px; }
+.gate-plan-toggle button { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  border: 1.5px solid var(--border); background: var(--surface-0); border-radius: var(--r-md);
+  padding: 10px 8px; cursor: pointer; color: var(--text); transition: border-color var(--t-fast), background var(--t-fast); }
+.gate-plan-toggle button:hover { border-color: var(--accent-ring); }
+.gate-plan-toggle button.on { border-color: var(--accent); background: var(--accent-soft); }
+.gate-plan-toggle .pl { font-size: var(--fs-sm); color: var(--text-muted); display: inline-flex; align-items: center; gap: 6px; }
+.gate-plan-toggle button.on .pl { color: var(--accent); }
+.gate-plan-toggle .pp { font-size: var(--fs-md); font-weight: var(--fw-bold); }
+.gate-plan-toggle .save { font-size: var(--fs-2xs); font-weight: var(--fw-bold); color: var(--success);
+  background: var(--success-soft); border-radius: var(--r-full); padding: 1px 6px; font-style: normal; }
+.gate-trial-note { font-size: var(--fs-xs); color: var(--text-muted); line-height: var(--lh-normal); margin: 2px 0 14px; }
 .gate-loading { display: flex; flex-direction: column; align-items: center; gap: 12px; color: var(--text-muted); padding: 24px; }

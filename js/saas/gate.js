@@ -4,7 +4,7 @@ import * as auth from "./auth.js";
 
 export async function initGate() {
   const cfg = (window.PE_CONFIG && window.PE_CONFIG.saas) || {};
-  if (!cfg.enabled || !cfg.supabaseUrl || cfg.freeTrial) return; // open mode
+  if (!cfg.enabled || !cfg.supabaseUrl) return; // open mode (demo host, or not yet configured)
 
   const root = buildOverlay();
   setView(root, loading());
@@ -104,20 +104,36 @@ function authForm(root, cfg) {
 }
 
 function paywall(root, cfg, session) {
+  const prices = cfg.prices || {};
+  const days = cfg.trialDays || 7;
+  let plan = prices.monthly && prices.monthly.id ? "monthly" : (prices.annual ? "annual" : "monthly");
   const d = document.createElement("div");
-  d.innerHTML = `
-    <h2 class="gate-title">Unlock ${brand()} ${cfg.planName || "Pro"}</h2>
-    <p class="gate-sub">Full editing — text, annotate, sign, forms, OCR, redaction and more.</p>
-    <div class="gate-price">${cfg.priceLabel || ""}</div>
-    <button class="gate-btn primary" id="gateSub">Subscribe</button>
-    <div class="gate-err" hidden></div>
-    <p class="gate-fine">Signed in as ${session.user.email} · <a href="#" id="gateOut">Sign out</a></p>`;
-  d.querySelector("#gateSub").addEventListener("click", async (e) => {
-    const b = e.target; b.disabled = true; b.textContent = "Redirecting…";
-    try { await auth.startCheckout(cfg); }
-    catch (err) { const el = d.querySelector(".gate-err"); el.textContent = err.message; el.hidden = false; b.disabled = false; b.textContent = "Subscribe"; }
-  });
-  d.querySelector("#gateOut").addEventListener("click", async (e) => { e.preventDefault(); await auth.signOut(); refresh(root, cfg); });
+  const draw = () => {
+    const sel = prices[plan] || {};
+    const hasAnnual = prices.annual && (prices.annual.label || prices.annual.id);
+    const hasMonthly = prices.monthly && (prices.monthly.label || prices.monthly.id);
+    d.innerHTML = `
+      <h2 class="gate-title">Start your ${days}-day free trial</h2>
+      <p class="gate-sub">Full editing — edit text, annotate, sign, fill forms, OCR, redact &amp; more. Cancel anytime.</p>
+      <div class="gate-plan-toggle">
+        ${hasMonthly ? `<button data-p="monthly" class="${plan === "monthly" ? "on" : ""}"><span class="pl">Monthly</span><span class="pp">${(prices.monthly.label || "")}</span></button>` : ""}
+        ${hasAnnual ? `<button data-p="annual" class="${plan === "annual" ? "on" : ""}"><span class="pl">Annual <i class="save">save 17%</i></span><span class="pp">${(prices.annual.label || "")}</span></button>` : ""}
+      </div>
+      <p class="gate-trial-note">Free for ${days} days, then <b>${sel.label || ""}</b>. We'll remind you before the trial ends — cancel anytime and you won't be charged.</p>
+      <button class="gate-btn primary" id="gateSub">Start ${days}-day free trial</button>
+      <div class="gate-err" hidden></div>
+      <p class="gate-fine">Signed in as ${session.user.email} · <a href="#" id="gateOut">Sign out</a></p>`;
+    d.querySelectorAll(".gate-plan-toggle button").forEach((b) => b.addEventListener("click", () => { plan = b.dataset.p; draw(); }));
+    d.querySelector("#gateSub").addEventListener("click", async (e) => {
+      const b = e.target; b.disabled = true; b.textContent = "Redirecting…";
+      const id = (prices[plan] || {}).id;
+      if (!id) { const el = d.querySelector(".gate-err"); el.textContent = "Pricing isn't configured yet."; el.hidden = false; b.disabled = false; b.textContent = `Start ${days}-day free trial`; return; }
+      try { await auth.startCheckout(cfg, id); }
+      catch (err) { const el = d.querySelector(".gate-err"); el.textContent = err.message; el.hidden = false; b.disabled = false; b.textContent = `Start ${days}-day free trial`; }
+    });
+    d.querySelector("#gateOut").addEventListener("click", async (e) => { e.preventDefault(); await auth.signOut(); refresh(root, cfg); });
+  };
+  draw();
   return d;
 }
 
