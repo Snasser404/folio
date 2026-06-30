@@ -23,8 +23,8 @@
       // Project settings → Your apps → SDK setup and configuration → Config).
       firebase: {
         apiKey: "",
-        authDomain: "",          // e.g. "folio-xxxx.firebaseapp.com"
-        projectId: "",           // e.g. "folio-xxxx"
+        authDomain: "",          // e.g. "foliopdf-xxxx.firebaseapp.com"
+        projectId: "",           // e.g. "foliopdf-xxxx"
         appId: "",
         storageBucket: "",       // optional
         messagingSenderId: "",   // optional
@@ -41,6 +41,6 @@
       checkoutFn: "/.netlify/functions/create-checkout-session",
       portalFn: "/.netlify/functions/create-portal-session",
     },
-    brand: { name: "Folio", tagline: "Edit any PDF, right in your browser." },
+    brand: { name: "FolioPDF", tagline: "Edit any PDF, right in your browser." },
   };
 })();

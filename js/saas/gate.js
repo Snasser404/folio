@@ -52,7 +52,7 @@ function setView(root, node) { const c = card(root); c.innerHTML = ""; c.appendC
 function show(root) { root.style.display = "flex"; }
 function hide(root) { root.style.display = "none"; }
 
-const brand = () => ((window.PE_CONFIG && window.PE_CONFIG.brand && window.PE_CONFIG.brand.name) || "PDF Studio");
+const brand = () => ((window.PE_CONFIG && window.PE_CONFIG.brand && window.PE_CONFIG.brand.name) || "FolioPDF");
 
 /* ---- views ---- */
 function loading(text) {

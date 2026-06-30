@@ -1,4 +1,4 @@
-# Folio
+# FolioPDF
 
 **Edit any PDF, right in your browser.** A professional, **100% client-side** PDF editor —
 Acrobat-grade editing with nothing ever uploaded; your files stay on your device.

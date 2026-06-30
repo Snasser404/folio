@@ -14,18 +14,18 @@ server.
 
 ## 0. Decide your URLs
 - **Demo (free, open):** your GitHub Pages site — `https://nassersaleh.ca/folio/`. Leave it; it's the "try before you buy" page.
-- **App (paid, gated):** a Netlify deploy, e.g. `https://folio-app.netlify.app` or a subdomain `https://app.nassersaleh.ca`. The paywall turns on automatically here.
+- **App (paid, gated):** a Netlify deploy, e.g. `https://foliopdf-app.netlify.app` or a subdomain `https://app.nassersaleh.ca`. The paywall turns on automatically here.
 
 ## 1. Firebase (accounts) — free
-1. Go to <https://console.firebase.google.com> → **Add project** → name it `folio` → you can disable Google Analytics → **Create**.
-2. **Add a Web app:** click the **`</>`** (web) icon → nickname `folio-web` → **Register app**. Firebase shows a `firebaseConfig = { apiKey, authDomain, projectId, appId, ... }` — **copy it** (this is *public*, goes in `js/config.js`).
+1. Go to <https://console.firebase.google.com> → **Add project** → name it `foliopdf` → you can disable Google Analytics → **Create**.
+2. **Add a Web app:** click the **`</>`** (web) icon → nickname `foliopdf-web` → **Register app**. Firebase shows a `firebaseConfig = { apiKey, authDomain, projectId, appId, ... }` — **copy it** (this is *public*, goes in `js/config.js`).
 3. **Enable login:** left menu **Build → Authentication → Get started → Sign-in method → Email/Password → Enable → Save.**
 4. **Create the database:** **Build → Firestore Database → Create database → Production mode → pick a location → Enable.**
 5. **Paste the security rules:** Firestore Database → **Rules** tab → replace everything with the contents of [`firestore.rules`](firestore.rules) → **Publish.**
 6. **Server key (SECRET):** gear ⚙ → **Project settings → Service accounts → Generate new private key** → it downloads a JSON file. From that file you'll need three values for Netlify (step 3): `project_id`, `client_email`, and `private_key`. **Keep this file private — never commit it.**
 
 ## 2. Stripe (subscriptions + trial)
-1. <https://dashboard.stripe.com> → **Products → Add product** → name "Folio Pro".
+1. <https://dashboard.stripe.com> → **Products → Add product** → name "FolioPDF Pro".
 2. Add **two recurring prices**:
    - **$9.00 / month** → copy its Price ID (`price_…`) → `STRIPE_PRICE_MONTHLY`.
    - **$90.00 / year** → copy its Price ID (`price_…`) → `STRIPE_PRICE_ANNUAL`.
@@ -50,7 +50,7 @@ server.
    | `FIREBASE_PROJECT_ID` | `project_id` from the service-account JSON |
    | `FIREBASE_CLIENT_EMAIL` | `client_email` from the JSON |
    | `FIREBASE_PRIVATE_KEY` | `private_key` from the JSON — paste it **exactly**, including the `-----BEGIN…` / `…END-----` lines and the `\n`s |
-   | `SITE_URL` | your app URL, e.g. `https://folio-app.netlify.app` |
+   | `SITE_URL` | your app URL, e.g. `https://foliopdf-app.netlify.app` |
 3. (Optional) add a custom domain `app.nassersaleh.ca` under **Domain settings**.
 4. Trigger a deploy.
 
@@ -62,8 +62,8 @@ var APP_HOSTS = ["app.nassersaleh.ca"];   // your custom app domain (netlify.app
 ...
 firebase: {
   apiKey: "AIza...",
-  authDomain: "folio-xxxx.firebaseapp.com",
-  projectId: "folio-xxxx",
+  authDomain: "foliopdf-xxxx.firebaseapp.com",
+  projectId: "foliopdf-xxxx",
   appId: "1:....:web:....",
 },
 prices: {
