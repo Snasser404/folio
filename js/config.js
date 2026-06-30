@@ -1,10 +1,10 @@
 /* Public runtime config. Loaded as a classic script before the app module.
  *
  * IMPORTANT — what's safe here vs. secret:
- *   SAFE to put in this file (they're public by design): supabaseUrl, supabaseAnonKey,
- *   Stripe *Price* IDs. These ship to every browser; that's expected.
+ *   SAFE to put in this file (they're public by design): the whole Firebase web config
+ *   and Stripe *Price* IDs. These ship to every browser; that's expected.
  *   NEVER put here (server-only Netlify env vars): STRIPE_SECRET_KEY,
- *   STRIPE_WEBHOOK_SECRET, SUPABASE_SERVICE_ROLE_KEY.  See SETUP-SAAS.md.
+ *   STRIPE_WEBHOOK_SECRET, FIREBASE_PRIVATE_KEY.  See SETUP-SAAS.md.
  *
  * The paywall turns on ONLY on the live app host (so the GitHub Pages demo at
  * nassersaleh.ca/folio stays a free, open demo). Add your app domain to APP_HOSTS. */
