@@ -22,12 +22,12 @@
       // Firebase web config (ALL public/safe to commit — paste from Firebase console →
       // Project settings → Your apps → SDK setup and configuration → Config).
       firebase: {
-        apiKey: "",
-        authDomain: "",          // e.g. "foliopdf-xxxx.firebaseapp.com"
-        projectId: "",           // e.g. "foliopdf-xxxx"
-        appId: "",
-        storageBucket: "",       // optional
-        messagingSenderId: "",   // optional
+        apiKey: "AIzaSyB2IJGm5unFUEbdiCI5i_EF8lhNe03DMdU",
+        authDomain: "foliopdf-72987.firebaseapp.com",
+        projectId: "foliopdf-72987",
+        appId: "1:418214879868:web:dddec89d5cd7bf7c875ff9",
+        storageBucket: "foliopdf-72987.firebasestorage.app",
+        messagingSenderId: "418214879868",
       },
 
       // Stripe recurring Price IDs (create both in Stripe → one Product, two prices).
