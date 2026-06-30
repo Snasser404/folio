@@ -4,7 +4,7 @@ import * as auth from "./auth.js";
 
 export async function initGate() {
   const cfg = (window.PE_CONFIG && window.PE_CONFIG.saas) || {};
-  if (!cfg.enabled || !cfg.supabaseUrl) return; // open mode (demo host, or not yet configured)
+  if (!cfg.enabled || !(cfg.firebase && cfg.firebase.apiKey)) return; // open mode (demo host / not configured)
 
   const root = buildOverlay();
   setView(root, loading());
@@ -93,8 +93,7 @@ function authForm(root, cfg) {
       const { error } = await fn(email.value.trim(), pw.value);
       submit.disabled = false; submit.textContent = mode === "signin" ? "Sign in" : "Create account";
       if (error) { err.textContent = error.message; err.hidden = false; return; }
-      if (mode === "signup") { err.className = "gate-err"; err.style.color = "var(--success)"; err.textContent = "Account created. If email confirmation is on, check your inbox, then sign in."; err.hidden = false; }
-      else refresh(root, cfg);
+      refresh(root, cfg);   // Firebase signs the user in immediately, on sign-up too
     };
     submit.addEventListener("click", go);
     pw.addEventListener("keydown", (e) => { if (e.key === "Enter") go(); });

@@ -1,8 +1,8 @@
 {
-  "name": "pdf-studio-functions",
+  "name": "folio-functions",
   "private": true,
   "dependencies": {
     "stripe": "^14.25.0",
-    "@supabase/supabase-js": "^2.45.4"
+    "firebase-admin": "^12.1.0"
   }
 }

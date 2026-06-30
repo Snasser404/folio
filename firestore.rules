@@ -1,0 +1,13 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // A user may READ only their own profile (to see if they're Pro).
+    // Nobody may write from the client — only the server (Firebase Admin SDK in the
+    // Netlify webhook) writes `plan`, so users can't grant themselves Pro.
+    match /profiles/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+  }
+}

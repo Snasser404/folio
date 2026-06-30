@@ -19,8 +19,16 @@
       enabled: isAppHost,
       appHosts: APP_HOSTS,
 
-      supabaseUrl: "",            // public — e.g. "https://xxxx.supabase.co"
-      supabaseAnonKey: "",        // public anon key
+      // Firebase web config (ALL public/safe to commit — paste from Firebase console →
+      // Project settings → Your apps → SDK setup and configuration → Config).
+      firebase: {
+        apiKey: "",
+        authDomain: "",          // e.g. "folio-xxxx.firebaseapp.com"
+        projectId: "",           // e.g. "folio-xxxx"
+        appId: "",
+        storageBucket: "",       // optional
+        messagingSenderId: "",   // optional
+      },
 
       // Stripe recurring Price IDs (create both in Stripe → one Product, two prices).
       prices: {
