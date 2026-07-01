@@ -3,6 +3,13 @@
   publish = "."
   command = ""
 
+# These "keys" are PUBLIC by design (Stripe Price IDs + Firebase project id) and
+# intentionally also live in js/config.js — allow them past Netlify's secret scanner.
+# The real secrets (STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, FIREBASE_PRIVATE_KEY,
+# FIREBASE_CLIENT_EMAIL) are NOT in the repo and remain scanned.
+[build.environment]
+  SECRETS_SCAN_OMIT_KEYS = "STRIPE_PRICE_MONTHLY,STRIPE_PRICE_ANNUAL,FIREBASE_PROJECT_ID"
+
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
