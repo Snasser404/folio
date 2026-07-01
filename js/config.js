@@ -32,8 +32,8 @@
 
       // Stripe recurring Price IDs (create both in Stripe → one Product, two prices).
       prices: {
-        monthly: { id: "", label: "$9 / month" },
-        annual:  { id: "", label: "$90 / year" },
+        monthly: { id: "price_1ToUygEtaqpvMyCpe4bzukaH", label: "$9 / month" },
+        annual:  { id: "price_1ToUyhEtaqpvMyCpN51Zvnyv", label: "$90 / year" },
       },
       trialDays: 7,               // free trial length (card collected up front)
       planName: "Pro",
