@@ -1,0 +1,9 @@
+{
+  "name": "foliopdf",
+  "private": true,
+  "description": "FolioPDF — dependencies for the Netlify serverless functions (auth + billing). The app itself is static and has no build step.",
+  "dependencies": {
+    "stripe": "^14.25.0",
+    "firebase-admin": "^12.1.0"
+  }
+}

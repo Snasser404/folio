@@ -1,8 +1,0 @@
-{
-  "name": "foliopdf-functions",
-  "private": true,
-  "dependencies": {
-    "stripe": "^14.25.0",
-    "firebase-admin": "^12.1.0"
-  }
-}
